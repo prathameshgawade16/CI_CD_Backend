@@ -9,58 +9,69 @@ on:
       - uat
 
 jobs:
-  deploy:
+  Deploy:
+    name: Deploy to EC2
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20.x
-
-      - name: Install Dependencies
-        run: npm install --force
-
-      - name: Create SSH Key
-        run: |
-          echo "${{ secrets.EC2_KEY }}" > key.pem
-          chmod 400 key.pem
-          echo "Key content:"
-          cat key.pem
-          ls -l key.pem
-
-      - name: Test SSH Connection
-        run: |
-          ssh -v -o StrictHostKeyChecking=no -i key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "echo 'SSH connection successful'"
-
-      - name: Deploy to EC2
-        if: success()
+      - uses: actions/checkout@v2
+      - name: Build & Deploy
         env:
-          EC2_USER: ${{ secrets.EC2_USER }}
-          EC2_HOST: ${{ secrets.EC2_HOST }}
-        run: |
-          ssh -o StrictHostKeyChecking=no -i key.pem $EC2_USER@$EC2_HOST << 'EOF'
-            cd /home/ec2-user/CI_CD_Backend
-            git pull origin uat
-            npm install
-            pm2 restart app
-          EOF
+          PRIVATE_KEY: ${{ secrets.EC2_KEY }}
+          HOSTNAME: ${{secrets.EC2_HOST}}
+          USER_NAME: ${{secrets.EC2_USER}}
 
-      # - name: Deploy to EC2
-      #   env:
-      #     EC2_USER: ${{ secrets.EC2_USER }}
-      #     EC2_HOST: ${{ secrets.EC2_HOST }}
-      #     EC2_KEY: ${{ secrets.EC2_KEY }}
-      #   run: |
-      #     echo "$EC2_KEY" > key.pem
-      #     chmod 400 key.pem
-      #     cat key.pem
-      #     ssh -o StrictHostKeyChecking=no -i key.pem $EC2_USER@$EC2_HOST << 'EOF'
-      #       cd /path/to/your/app
-      #       git pull origin uat
-      #       npm install
-      #       pm2 restart your-service-name
-      #     EOF
+        run: |
+          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
+          ssh -o StrictHostKeyChecking=no -i private_key ${USER_NAME}@${HOSTNAME} '
+
+              cd /home/ec2-user/CI_CD_Backend &&
+              git checkout uat &&
+              git fetch --all &&
+              git reset --hard origin/uat &&
+              git pull origin uat &&
+              sudo npm i &&
+              sudo pm2 stop app &&
+              sudo pm2 start app
+
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       - name: Checkout Repository
+#         uses: actions/checkout@v4
+
+#       - name: Set up Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: 20.x
+
+#       - name: Install Dependencies
+#         run: npm install --force
+
+#       - name: Create SSH Key
+#         run: |
+#           echo "${{ secrets.EC2_KEY }}" > key.pem
+#           chmod 400 key.pem
+#           echo "Key content:"
+#           cat key.pem
+#           ls -l key.pem
+
+#       - name: Test SSH Connection
+#         run: |
+#           ssh -v -o StrictHostKeyChecking=no -i key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "echo 'SSH connection successful'"
+
+#       - name: Deploy to EC2
+#         if: success()
+#         env:
+#           EC2_USER: ${{ secrets.EC2_USER }}
+#           EC2_HOST: ${{ secrets.EC2_HOST }}
+#         run: |
+#           ssh -o StrictHostKeyChecking=no -i key.pem $EC2_USER@$EC2_HOST << 'EOF'
+#             cd /home/ec2-user/CI_CD_Backend
+#             git pull origin uat
+#             npm install
+#             pm2 restart app
+#           EOF
+
