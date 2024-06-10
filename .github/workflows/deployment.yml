@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - name: Build & Deploy
+      - name: Deploy
         env:
           PRIVATE_KEY: ${{ secrets.EC2_KEY }}
           HOSTNAME: ${{secrets.EC2_HOST}}
@@ -33,6 +33,7 @@ jobs:
               sudo npm i &&
               sudo pm2 stop app &&
               sudo pm2 start app
+              '
 
 # jobs:
 #   deploy:
