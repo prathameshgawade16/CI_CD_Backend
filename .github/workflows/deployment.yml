@@ -32,6 +32,7 @@ jobs:
         run: |
           echo "$EC2_KEY" > key.pem
           chmod 400 key.pem
+          cat key.pem
           ssh -o StrictHostKeyChecking=no -i key.pem $EC2_USER@$EC2_HOST << 'EOF' 
             cd /path/to/your/app
             git pull origin uat
