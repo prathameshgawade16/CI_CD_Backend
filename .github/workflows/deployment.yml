@@ -32,8 +32,8 @@ jobs:
               git reset --hard origin/uat &&
               git pull origin uat &&
               sudo npm i &&
-              sudo pm2 stop app &&
-              sudo pm2 start app
+              sudo pm2 stop app.js &&
+              sudo pm2 start app.js
               '
 
 # jobs:
